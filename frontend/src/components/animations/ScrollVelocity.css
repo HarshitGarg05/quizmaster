@@ -1,0 +1,117 @@
+.parallax {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 0;
+    background: var(--color-primary);
+    transition: padding 0.3s ease;
+}
+
+@media (min-width: 1024px) {
+    .parallax {
+        padding: 2.5rem 0;
+    }
+}
+
+.parallax:nth-child(even) {
+    background: var(--color-surface-container);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.scroller {
+    display: flex;
+    white-space: nowrap;
+    font-family: 'Manrope', 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #ffffff;
+    line-height: 1;
+}
+
+@media (min-width: 768px) {
+    .scroller {
+        font-size: 1.25rem;
+    }
+}
+
+@media (min-width: 1280px) {
+    .scroller {
+        font-size: 1.4rem;
+    }
+}
+
+.scroller span {
+    display: flex;
+    align-items: center;
+    padding-right: 3rem;
+}
+
+@media (min-width: 768px) {
+    .scroller span {
+        padding-right: 5rem;
+    }
+}
+
+.velocity-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.25rem 0;
+}
+
+@media (min-width: 768px) {
+    .velocity-item {
+        gap: 1rem;
+        padding: 0.5rem 0;
+    }
+}
+
+.velocity-icon {
+    background: var(--color-on-primary);
+    color: var(--color-primary) !important;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 0.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    overflow: hidden;
+    margin-right: 0.25rem;
+}
+
+@media (min-width: 768px) {
+    .velocity-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.85rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+}
+
+.velocity-icon .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined' !important;
+    font-size: 1.1rem !important;
+    line-height: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: var(--color-primary) !important;
+}
+
+@media (min-width: 768px) {
+    .velocity-icon .material-symbols-outlined {
+        font-size: 1.4rem !important;
+    }
+}
+
+.parallax:nth-child(even) .velocity-icon {
+    color: var(--color-primary);
+}
