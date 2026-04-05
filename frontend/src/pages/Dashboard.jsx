@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -46,9 +46,9 @@ const StatCard = ({ icon, value, label, color, delay }) => (
 );
 
 const Dashboard = () => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const { showNotification } = useNotification();
-    const [stats, setStats] = useState({ attempts: [], totalXP: 0, avgAccuracy: 0 });
+    const [stats, setStats] = useState({ attempts: [], totalXP: 0, avgAccuracy: 0, quizzesFinished: 0 });
     const [recommended, setRecommended] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -57,34 +57,46 @@ const Dashboard = () => {
         try {
             await axios.delete('/api/attempts/clear');
             setStats(prev => ({ ...prev, attempts: [] }));
-            showNotification('Academic record cleared successfully', 'success');
+            // We fetch fresh profile after clearing to ensure UI is in sync
+            fetchDashboardData();
+            showNotification('Recent history cleared.', 'success');
         } catch (err) {
             console.error('Failed to clear history:', err);
-            showNotification('Security protocol failure: Unable to clear records.', 'error');
+            showNotification('Error: Unable to clear records.', 'error');
         }
     };
 
+    const fetchDashboardData = useCallback(async () => {
+        try {
+            const [recRes, attemptRes, profileRes] = await Promise.all([
+                axios.get('/api/quizzes?limit=4'),
+                axios.get('/api/attempts/user/me'),
+                axios.get('/api/auth/me')
+            ]);
+
+            setRecommended(recRes.data.slice(0, 4));
+            const attempts = attemptRes.data;
+            const userProfile = profileRes.data;
+
+            // Sync global auth state with persistent stats
+            updateUser(userProfile);
+
+            setStats({
+                attempts,
+                totalXP: userProfile.xp || 0,
+                avgAccuracy: userProfile.accuracy || 0,
+                quizzesFinished: userProfile.maidenQuizzes?.length || 0
+            });
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const recRes = await axios.get('/api/quizzes?limit=3');
-                setRecommended(recRes.data.slice(0, 3));
-
-                const attemptRes = await axios.get('/api/attempts/user/me');
-                const attempts = attemptRes.data;
-                const totalXP = attempts.reduce((acc, a) => acc + (a.xpEarned || 0), 0);
-                const avgAccuracy = attempts.length > 0 ? (attempts.reduce((acc, a) => acc + a.accuracy, 0) / attempts.length) : 0;
-
-                setStats({ attempts, totalXP, avgAccuracy });
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         if (user) fetchDashboardData();
-    }, [user]);
+    }, [user, fetchDashboardData]);
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-[#050505] overflow-hidden">
@@ -149,7 +161,7 @@ const Dashboard = () => {
                                 <div className="flex items-center gap-12 bg-white/[0.04] p-10 sm:p-14 rounded-[64px] border border-white/5 backdrop-blur-xl shadow-2xl transition-all duration-700 hover:border-white/10 max-w-fit mx-auto">
                                     <img src={getRankDetails(stats.totalXP).badge} alt={getRankByXP(stats.totalXP)} className="w-32 h-32 sm:w-48 sm:h-48 object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.2)] group-hover/rank:scale-105 transition-all duration-700" />
                                     <div className="flex flex-col items-center gap-4 text-center">
-                                        <span className="text-[10px] sm:text-xs font-black uppercase tracking-[1em] text-on-surface-variant opacity-40 mb-1 pl-[1em]">Scholar Rank</span>
+                                        <span className="text-[10px] sm:text-xs font-black uppercase tracking-[1em] text-on-surface-variant opacity-40 mb-1 pl-[1em]">User Rank</span>
                                         <div className="relative flex flex-col items-center">
                                             <h3 style={{ color: getRankDetails(stats.totalXP).color }} className="text-3xl sm:text-5xl font-black font-headline tracking-tighter uppercase italic leading-none drop-shadow-sm pr-[0.05em]">{getRankByXP(stats.totalXP)}</h3>
                                             <div className="h-1.5 w-full max-w-[100px] mt-6 rounded-full opacity-30 shadow-[0_0_15px_rgba(255,255,255,0.3)] animate-pulse" style={{ backgroundColor: getRankDetails(stats.totalXP).color }} />
@@ -179,7 +191,7 @@ const Dashboard = () => {
                     />
                     <StatCard
                         icon="history_edu"
-                        value={stats.attempts.length}
+                        value={stats.quizzesFinished}
                         label="Quizzes Finished"
                         color="bg-white/10"
                         delay={0.4}
@@ -329,8 +341,8 @@ const Dashboard = () => {
                 onClose={() => setShowConfirmModal(false)}
                 onConfirm={handleClearHistory}
                 title="Wipe Records?"
-                message="This will permanently delete your entire quiz history. This action protocol is irreversible."
-                confirmText="Confirm Wipe"
+                message="This will permanently delete your entire quiz history. This action cannot be undone."
+                confirmText="Delete History"
                 type="danger"
             />
         </div>

@@ -17,33 +17,10 @@ app.use((req, res, next) => {
     next();
 });
 
-// Database Connection State Cache
-let isConnected = false;
-
-// Middleware to ensure DB connection
-app.use(async (req, res, next) => {
-    if (isConnected && mongoose.connection.readyState === 1) return next();
-
-    try {
-        console.log('Establishing connection to MongoDB Atlas...');
-        await mongoose.connect(process.env.MONGODB_URI, {
-            serverSelectionTimeoutMS: 8000, // Wait 8s before failing
-        });
-        isConnected = true;
-        console.log('Neural Synapse Established: MongoDB Connected');
-        next();
-    } catch (err) {
-        console.error('CRITICAL: Neural Synapse Failure:', err.message);
-        // Only return 503 if it's actually an API request
-        if (req.url.startsWith('/api')) {
-            return res.status(503).json({
-                message: 'Neural Protocol Unavailable',
-                error: 'Database connection failed. Please try again in 5 seconds.'
-            });
-        }
-        next();
-    }
-});
+// Database Connection
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('Database Connected Successfully'))
+    .catch(err => console.error('CRITICAL: Database Connection Failure:', err.message));
 
 // Basic Route
 app.get('/', (req, res) => {

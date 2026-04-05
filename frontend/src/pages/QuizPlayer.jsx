@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,11 +14,16 @@ const QuizPlayer = () => {
     const [answers, setAnswers] = useState({});
     const [timeLeft, setTimeLeft] = useState(0);
     const [loading, setLoading] = useState(true);
+    const hasWarnedRef = useRef(false);
 
     const fetchQuiz = useCallback(async () => {
         try {
             const res = await axios.get(`/api/quizzes/${id}`);
             setQuiz(res.data);
+            if (res.data.hasAttempted && !hasWarnedRef.current) {
+                showNotification('Retake Notice: You have already completed this quiz. Points (XP) will not be added to your total.', 'info');
+                hasWarnedRef.current = true;
+            }
             setTimeLeft((res.data.timeLimit || 10) * 60);
         } catch (err) {
             console.error(err);
@@ -55,7 +60,7 @@ const QuizPlayer = () => {
             navigate(`/results/${res.data._id}`);
         } catch (err) {
             console.error(err);
-            showNotification('Neural uplink failed: Submission incomplete. Re-attempting connection...', 'error');
+            showNotification('Submission failed: Connection problem. Please try again.', 'error');
         }
     }, [quiz, answers, timeLeft, id, navigate]);
 
@@ -94,7 +99,7 @@ const QuizPlayer = () => {
                     <header className="p-6 sm:p-8 md:p-10 flex flex-col md:flex-row justify-between items-center gap-6 md:gap-10 h-full">
                         <div className="space-y-2 sm:space-y-4 text-center md:text-left w-full md:w-auto">
                             <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center justify-center md:justify-start gap-2">
-                                <p className="text-primary font-headline font-black tracking-[0.5em] text-[10px] sm:text-xs md:text-sm uppercase mb-3">Quiz Protocol</p>
+                                <p className="text-primary font-headline font-black tracking-[0.5em] text-[10px] sm:text-xs md:text-sm uppercase mb-3">Quiz Player</p>
                             </motion.div>
                             <h2 className="text-xl sm:text-2xl md:text-4xl font-black font-headline tracking-tighter text-on-surface leading-none uppercase truncate max-w-full md:max-w-md">{quiz?.title}</h2>
                             <div className="flex items-center justify-center md:justify-start gap-3 sm:gap-6 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
@@ -186,6 +191,12 @@ const QuizPlayer = () => {
                                 <h4 className="text-xl sm:text-2xl font-black font-headline tracking-tighter text-on-surface uppercase leading-none">Questions.</h4>
                                 <span className="text-[10px] font-black text-primary bg-white/5 px-4 py-1.5 rounded-full uppercase tracking-widest">{quiz?.questions.length} Total</span>
                             </div>
+                            {quiz?.hasAttempted && (
+                                <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20 flex items-center gap-3">
+                                    <span className="material-symbols-outlined text-primary text-lg">history</span>
+                                    <p className="text-[10px] font-black uppercase tracking-wider text-primary leading-tight">Retake Active: <br /><span className="opacity-60 text-[9px]">XP Already Claimed</span></p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex-1 pb-4">

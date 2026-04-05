@@ -7,10 +7,10 @@ import SoftAurora from '../components/animations/SoftAurora';
 import BorderGlow from '../components/animations/BorderGlow';
 
 const Leaderboard = () => {
-    const { currentUser } = useAuth();
+    const { user } = useAuth();
     const [leaders, setLeaders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [timeframe, setTimeframe] = useState('Monthly');
+    const [timeframe, setTimeframe] = useState('All Time');
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
@@ -20,7 +20,7 @@ const Leaderboard = () => {
             setLoading(true);
             try {
                 const res = await axios.get(`/api/users/leaderboard?timeframe=${timeframe}`);
-                const realData = res.data || [];
+                const realData = res.data.leaders || [];
                 const processed = realData
                     .sort((a, b) => (b.xp || 0) - (a.xp || 0))
                     .filter(user => user && user.role !== 'admin' && user.role !== 'Admin');
@@ -79,7 +79,7 @@ const Leaderboard = () => {
                         <div className="max-w-2xl px-4 sm:px-0 flex flex-col items-center">
                             <span className="text-primary font-headline font-black tracking-[0.5em] text-[10px] sm:text-xs md:text-sm uppercase mb-6 block">hall of fame</span>
                             <h1 className="text-4xl md:text-7xl font-extrabold tracking-tighter text-on-surface mb-6 font-headline uppercase leading-none text-center">Global <br /><span className="gradient-text italic px-2">Rankings</span></h1>
-                            <p className="text-on-surface-variant text-sm md:text-lg leading-relaxed font-body font-medium max-w-xl mx-auto opacity-70">The top scholars are fixed at the top. Search below to find anyone else in the ranks.</p>
+                            <p className="text-on-surface-variant text-sm md:text-lg leading-relaxed font-body font-medium max-w-xl mx-auto opacity-70">The top players are fixed at the top. Search below to find anyone else in the ranks.</p>
                         </div>
                         <div className="flex items-center gap-2 bg-surface-container-high p-1.5 rounded-full shadow-inner border border-white/5 mx-auto md:mx-0 w-full max-w-[320px] sm:max-w-[440px]">
                             {['Weekly', 'Monthly', 'All Time'].map((t) => (
@@ -156,7 +156,7 @@ const Leaderboard = () => {
                             <div className="relative">
                                 <div className="flex flex-col items-center text-center gap-2 mb-10 px-8 pt-8">
                                     <h2 className="text-3xl font-black text-white italic tracking-tight font-headline">RANKING LIST</h2>
-                                    <p className="text-on-surface-variant font-medium text-xs tracking-widest uppercase opacity-60">Search the entire scholar database</p>
+                                    <p className="text-on-surface-variant font-medium text-xs tracking-widest uppercase opacity-60">Search the user leaderboard</p>
                                 </div>
                                 <div className="overflow-hidden min-h-[500px] relative">
                                     <table className="w-full border-collapse">
@@ -174,16 +174,17 @@ const Leaderboard = () => {
                                                     <tr key={`empty-${i}`} className="h-[96px] opacity-0 transition-none"><td colSpan="4"></td></tr>
                                                 );
                                                 const originalRank = leaders.findIndex(l => l._id === u._id) + 1;
+                                                const isUser = user?._id === u._id;
                                                 return (
-                                                    <tr key={u._id} className="hover:bg-white/5 transition-all group h-[96px]">
-                                                        <td className="px-4 sm:px-8 py-4 sm:py-6 font-headline font-bold text-base sm:text-lg text-white/20 group-hover:text-primary transition-colors">{originalRank}</td>
+                                                    <tr key={u._id} className={`hover:bg-white/5 transition-all group h-[96px] ${isUser ? 'bg-primary/5 border-l-4 border-l-primary' : ''}`}>
+                                                        <td className={`px-4 sm:px-8 py-4 sm:py-6 font-headline font-bold text-base sm:text-lg transition-colors ${isUser ? 'text-primary' : 'text-white/20 group-hover:text-primary'}`}>{originalRank}</td>
                                                         <td className="px-4 sm:px-8 py-4 sm:py-6">
                                                             <div className="flex items-center gap-3 sm:gap-4">
-                                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 bg-white/5 border border-white/10 shadow-sm group-hover:shadow-md transition-all">
+                                                                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 bg-white/5 border shadow-sm group-hover:shadow-md transition-all ${isUser ? 'border-primary ring-2 ring-primary/20' : 'border-white/10'}`}>
                                                                     {u.avatar ? <img className="w-full h-full object-cover" src={u.avatar} alt={u.name} /> : <div className="w-full h-full flex items-center justify-center font-bold text-white editorial-gradient rounded-full text-sm">{u.name[0]}</div>}
                                                                 </div>
                                                                 <div className="flex flex-col">
-                                                                    <p className="font-bold text-on-surface font-body group-hover:text-white truncate max-w-[100px] sm:max-w-none">{u.name}</p>
+                                                                    <p className={`font-bold font-body truncate max-w-[100px] sm:max-w-none ${isUser ? 'text-primary' : 'text-on-surface group-hover:text-white'}`}>{u.name} {isUser && <span className="ml-1 text-[8px] px-1.5 py-0.5 bg-primary text-white rounded-full uppercase tracking-tighter">You</span>}</p>
                                                                     <div className="sm:hidden flex items-center gap-1">
                                                                         <img src={getRankDetails(u.xp).badge} alt={getRankByXP(u.xp)} className="w-5 h-5 object-contain" />
                                                                         <p className="text-[10px] font-bold uppercase tracking-widest opacity-60" style={{ color: getRankDetails(u.xp).color }}>{getRankByXP(u.xp)}</p>
@@ -197,17 +198,39 @@ const Leaderboard = () => {
                                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80" style={{ color: getRankDetails(u.xp).color }}>{getRankByXP(u.xp)}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-4 sm:px-8 py-4 sm:py-6 text-right font-headline font-extrabold text-on-surface text-lg sm:text-xl group-hover:text-primary transition-colors">{(u.xp || 0).toLocaleString()}</td>
+                                                        <td className={`px-4 sm:px-8 py-4 sm:py-6 text-right font-headline font-extrabold text-lg sm:text-xl transition-colors ${isUser ? 'text-primary scale-110' : 'text-on-surface group-hover:text-primary'}`}>{(u.xp || 0).toLocaleString()}</td>
                                                     </tr>
                                                 );
                                             })}
                                         </tbody>
                                     </table>
+
+                                    {/* PERSISTENT FOOTER: Show "You" at bottom if not in current page list */}
+                                    {user && !pagedItems.some(item => item && item._id === user._id) && leaders.some(l => l._id === user._id) && searchQuery === '' && (
+                                        <div className="absolute bottom-0 left-0 right-0 bg-primary/10 border-t border-primary/20 backdrop-blur-md z-30">
+                                            <div className="flex items-center justify-between px-8 py-4">
+                                                <div className="flex items-center gap-4">
+                                                    <span className="font-headline font-black text-primary text-lg">{leaders.findIndex(l => l._id === user._id) + 1}</span>
+                                                    <div className="w-10 h-10 rounded-full border border-primary p-0.5">
+                                                        {user.avatar ? <img className="w-full h-full object-cover rounded-full" src={user.avatar} alt={user.name} /> : <div className="w-full h-full flex items-center justify-center font-bold text-white bg-primary rounded-full text-xs">{user.name[0]}</div>}
+                                                    </div>
+                                                    <p className="font-bold text-white">{user.name} <span className="opacity-60 font-medium">(You)</span></p>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <img src={getRankDetails(user.xp).badge} alt={getRankByXP(user.xp)} className="w-8 h-8 object-contain" />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: getRankDetails(user.xp).color }}>{getRankByXP(user.xp)}</span>
+                                                    </div>
+                                                    <span className="font-headline font-black text-primary text-xl">{(user.xp || 0).toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                     {filteredAll.length === 0 && (
                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                             <div className="flex flex-col items-center gap-4 opacity-40">
                                                 <span className="material-symbols-outlined text-4xl">search_off</span>
-                                                <p className="text-sm font-black uppercase tracking-widest leading-loose font-headline text-center">No scholars found <br /><span className="text-[10px] font-medium tracking-[0.3em] font-body opacity-50">Try checking the spelling</span></p>
+                                                <p className="text-sm font-black uppercase tracking-widest leading-loose font-headline text-center">No players found <br /><span className="text-[10px] font-medium tracking-[0.3em] font-body opacity-50">Try checking the spelling</span></p>
                                             </div>
                                         </div>
                                     )}

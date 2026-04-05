@@ -55,8 +55,33 @@ const createAttempt = async (req, res) => {
         if (quiz.difficulty === 'Medium') difficultyMultiplier = 1.2;
         else if (quiz.difficulty === 'Hard') difficultyMultiplier = 1.5;
 
+        // 6. Check for Retake (Zero XP for subsequent attempts)
+        const fs = require('fs');
+        const path = require('path');
+        const mongoose = require('mongoose');
+        const logPath = path.join(process.cwd(), 'XPGUARD_DEBUG.txt');
+        const castQuizId = new mongoose.Types.ObjectId(quizId);
+
+        const allMatches = await Attempt.find({
+            userId: req.user._id,
+            quizId: castQuizId
+        }).lean();
+        let previousAttempt = allMatches.length > 0 ? allMatches[0] : null;
+
+        // PERSISTENT GUARD: If history was cleared, check the maidenQuizzes array in User model
+        if (!previousAttempt) {
+            const userForPersistentCheck = await User.findById(req.user._id).select('maidenQuizzes').lean();
+            if (userForPersistentCheck?.maidenQuizzes?.some(id => id.toString() === quizId.toString())) {
+                previousAttempt = { _id: 'PERSISTENT_GUARD_RECORD' }; // Synthetic record to trigger XP neutralization
+            }
+        }
+
+        const logMsg = `[XP_AUDIT] User: ${req.user._id} | Quiz: ${quizId} | Match Count: ${allMatches.length} | Found: ${!!previousAttempt} | Points: ${previousAttempt ? 0 : 'NEW'} | Time: ${new Date().toISOString()}\n`;
+        fs.appendFileSync(logPath, logMsg);
+
         const totalBeforeMultiplier = baseXP + accuracyBonus + timeBonus + streakBonus;
-        const xpEarned = Math.round(totalBeforeMultiplier * difficultyMultiplier);
+        // Apply XP only if no previous attempt exists
+        const xpEarned = previousAttempt ? 0 : Math.round(totalBeforeMultiplier * difficultyMultiplier);
 
         // Cap history at 10: Delete oldest if we reach 10
         const userAttemptsCount = await Attempt.countDocuments({ userId: req.user.id });
@@ -70,14 +95,20 @@ const createAttempt = async (req, res) => {
         }
 
         const attempt = await Attempt.create({
-            userId: req.user.id,
+            userId: req.user._id,
             quizId,
             answers,
             score,
             accuracy,
             timeTaken,
             xpEarned,
-            xpBreakdown: {
+            xpBreakdown: previousAttempt ? {
+                baseXP: 0,
+                accuracyBonus: 0,
+                timeBonus: 0,
+                streakBonus: 0,
+                difficultyMultiplier: 1
+            } : {
                 baseXP,
                 accuracyBonus,
                 timeBonus,
@@ -93,13 +124,22 @@ const createAttempt = async (req, res) => {
         // Push attempt to tracking
         user.attempts.push(attempt._id);
 
-        // Proper weighted accuracy over all attempts
-        const totalAttemptsCount = user.attempts.length;
-        if (totalAttemptsCount === 1) {
-            user.accuracy = accuracy;
-        } else {
-            // New average = (Old Average * (N-1) + New Value) / N
-            user.accuracy = Math.round(((user.accuracy * (totalAttemptsCount - 1)) + accuracy) / totalAttemptsCount);
+        // PERSISTENCE PROTOCOL: Record maiden attempt if it's the first time
+        if (xpEarned > 0 || !user.maidenQuizzes.some(id => id.toString() === quizId.toString())) {
+            const isFirstAttempt = !user.maidenQuizzes.some(id => id.toString() === quizId.toString());
+
+            if (isFirstAttempt) {
+                user.maidenQuizzes.push(castQuizId);
+
+                // Only update lifetime accuracy on maiden attempts
+                const n = user.maidenQuizzes.length;
+                if (n === 1) {
+                    user.accuracy = accuracy;
+                } else {
+                    // Weighted average for maiden attempts only
+                    user.accuracy = Math.round(((user.accuracy * (n - 1)) + accuracy) / n);
+                }
+            }
         }
 
         await user.save();
@@ -107,7 +147,19 @@ const createAttempt = async (req, res) => {
         // Update Quiz stats
         await Quiz.findByIdAndUpdate(quizId, { $inc: { totalAttempts: 1 } });
 
-        res.status(201).json(attempt);
+        res.status(201).json({
+            ...attempt.toObject(),
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                xp: user.xp,
+                accuracy: user.accuracy,
+                avatar: user.avatar,
+                maidenQuizzes: user.maidenQuizzes
+            }
+        });
     } catch (err) {
         res.status(500).json({ message: 'Failed to save attempt', error: err.message });
     }
@@ -115,17 +167,27 @@ const createAttempt = async (req, res) => {
 
 const getAttemptById = async (req, res) => {
     try {
-        const attempt = await Attempt.findById(req.params.id).populate('quizId');
+        const attempt = await Attempt.findById(req.params.id)
+            .populate('quizId')
+            .lean(); // Use lean for easier object merging
         if (!attempt) return res.status(404).json({ message: 'Attempt not found' });
-        res.status(200).json(attempt);
+
+        // Also fetch user to sync stats
+        const user = await User.findById(attempt.userId).select('name email role xp accuracy avatar maidenQuizzes').lean();
+
+        res.status(200).json({
+            ...attempt,
+            user
+        });
     } catch (err) {
+        console.error('Fetch Attempt Error:', err);
         res.status(500).json({ message: 'Failed to fetch attempt', error: err.message });
     }
 };
 
 const getUserAttempts = async (req, res) => {
     try {
-        const attempts = await Attempt.find({ userId: req.user.id }).populate('quizId').sort({ createdAt: -1 });
+        const attempts = await Attempt.find({ userId: req.user.id, isHidden: false }).populate('quizId').sort({ createdAt: -1 });
         res.status(200).json(attempts);
     } catch (err) {
         res.status(500).json({ message: 'Failed to fetch attempts', error: err.message });
@@ -134,8 +196,9 @@ const getUserAttempts = async (req, res) => {
 
 const clearUserHistory = async (req, res) => {
     try {
-        await Attempt.deleteMany({ userId: req.user.id });
-        // Also clear user's attempts array
+        // Soft delete: hide from dashboard but keep for leaderboard statistics
+        await Attempt.updateMany({ userId: req.user.id }, { $set: { isHidden: true } });
+        // NOTE: We do NOT clear maidenQuizzes here to maintain reward integrity even after history is wiped
         await User.findByIdAndUpdate(req.user.id, { $set: { attempts: [] } });
         res.status(200).json({ message: 'History cleared successfully' });
     } catch (err) {

@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-
+import { useAuth } from '../context/AuthContext';
 import BorderGlow from '../components/animations/BorderGlow';
 
 const Results = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { updateUser } = useAuth();
     const [attempt, setAttempt] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -16,6 +17,9 @@ const Results = () => {
             try {
                 const res = await axios.get(`/api/attempts/${id}`);
                 setAttempt(res.data);
+                if (res.data.user) {
+                    updateUser(res.data.user);
+                }
             } catch (err) {
                 console.error(err);
             } finally {
@@ -23,7 +27,7 @@ const Results = () => {
             }
         };
         fetchAttempt();
-    }, [id]);
+    }, [id, updateUser]);
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-surface">
@@ -80,10 +84,13 @@ const Results = () => {
                                     <span className="material-symbols-outlined text-[18px] text-primary">schedule</span> Time Taken
                                 </div>
                             </div>
-                            <div className="editorial-gradient p-6 md:p-8 rounded-3xl shadow-2xl shadow-primary/20 transform scale-105 group hover:scale-110 transition-all duration-500">
-                                <div className="text-3xl md:text-4xl font-black font-headline text-white mb-2 tabular-nums">+{attempt?.xpEarned || 0}</div>
-                                <div className="text-white/80 text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.4em] flex items-center justify-center gap-2">
-                                    <span className="material-symbols-outlined text-[18px] text-white">bolt</span> Total XP
+                            <div className={`p-6 md:p-8 rounded-3xl shadow-2xl transition-all duration-500 transform ${attempt?.xpEarned === 0 ? 'bg-surface-container-high border border-white/10 grayscale-[0.5] scale-100' : 'editorial-gradient shadow-primary/20 scale-105 group hover:scale-110'}`}>
+                                <div className={`text-3xl md:text-4xl font-black font-headline mb-2 tabular-nums ${attempt?.xpEarned === 0 ? 'text-on-surface-variant' : 'text-white'}`}>
+                                    {attempt?.xpEarned > 0 ? '+' : ''}{attempt?.xpEarned || 0}
+                                </div>
+                                <div className={`${attempt?.xpEarned === 0 ? 'text-on-surface-variant/60' : 'text-white/80'} text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.4em] flex items-center justify-center gap-2`}>
+                                    <span className="material-symbols-outlined text-[18px]">{attempt?.xpEarned === 0 ? 'history' : 'bolt'}</span>
+                                    {attempt?.xpEarned === 0 ? 'Retake: 0 XP' : 'Total XP Earned'}
                                 </div>
                             </div>
                         </div>

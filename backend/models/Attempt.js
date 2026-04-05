@@ -19,6 +19,7 @@ const attemptSchema = new mongoose.Schema({
         streakBonus: { type: Number, default: 0 },
         difficultyMultiplier: { type: Number, default: 1 }
     },
+    isHidden: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
 });
 

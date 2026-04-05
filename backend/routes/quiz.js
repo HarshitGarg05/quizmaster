@@ -30,9 +30,9 @@ router.get('/public/stats', async (req, res) => {
 });
 
 // General CRUD
-router.get('/', quizController.getAllQuizzes);
+router.get('/', auth, quizController.getAllQuizzes);
 router.post('/', auth, isAdmin, quizController.createQuiz);
-router.get('/:id', quizController.getQuizById);
+router.get('/:id', auth, quizController.getQuizById);
 router.put('/:id', auth, isAdmin, quizController.updateQuiz);
 router.delete('/:id', auth, isAdmin, async (req, res) => {
     try {

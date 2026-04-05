@@ -9,7 +9,7 @@ const auth = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         // Always check DB to see if user is banned
-        const user = await User.findById(decoded.id).select('role isBanned');
+        const user = await User.findById(decoded.id);
         if (!user) return res.status(404).json({ message: 'User no longer exists' });
 
         if (user.isBanned) {

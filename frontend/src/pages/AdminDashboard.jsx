@@ -156,9 +156,9 @@ const AdminDashboard = () => {
     const handleResetLeaderboard = async () => {
         setConfirmConfig({
             isOpen: true,
-            title: "Flush Records?",
-            message: "Wipe the global leaderboard. This protocol is irreversible.",
-            confirmText: "Confirm Wipe",
+            title: "Clear Leaderboard?",
+            message: "Wipe all leaderboard rankings. This action cannot be undone.",
+            confirmText: "Clear Rankings",
             onConfirm: async () => {
                 try {
                     await axios.delete('/api/admin/leaderboard/reset');
@@ -239,7 +239,7 @@ const AdminDashboard = () => {
                             <span className="text-primary font-headline font-black tracking-[0.5em] text-[10px] sm:text-xs md:text-sm uppercase block">Admin Control</span>
                         </div>
                         <h2 className="text-3xl sm:text-4xl md:text-6xl font-black font-headline tracking-tighter text-on-surface leading-none text-center">
-                            Protocol <br /><span className="gradient-text italic px-2">Management</span>.
+                            System <br /><span className="gradient-text italic px-2">Management</span>.
                         </h2>
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 w-full md:w-auto">

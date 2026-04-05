@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
     accuracy: { type: Number, default: 0 },
     avatar: { type: String }, // Base64 or URL
     attempts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Attempt' }],
+    maidenQuizzes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' }], // PERSISTENT LIST OF COMPLETED QUIZZES
     lastActive: { type: Date, default: Date.now },
     isBanned: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },

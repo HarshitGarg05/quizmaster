@@ -40,7 +40,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
                                 onClick={onClose}
                                 className="w-full px-8 py-4 bg-white/5 border border-white/5 text-on-surface font-black uppercase text-[10px] tracking-widest rounded-full hover:bg-white/10 transition-colors"
                             >
-                                Cancel Plan
+                                Cancel
                             </button>
                             <button
                                 onClick={() => {

@@ -11,14 +11,14 @@ router.get('/leaderboard', async (req, res) => {
         const now = new Date();
 
         if (timeframe === 'Weekly') {
-            dateFilter = { createdAt: { $gte: new Date(now.setDate(now.getDate() - 7)) } };
+            dateFilter = { createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } };
         } else if (timeframe === 'Monthly') {
-            dateFilter = { createdAt: { $gte: new Date(now.setMonth(now.getMonth() - 1)) } };
+            dateFilter = { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } };
         }
 
+        let leaders;
         if (Object.keys(dateFilter).length > 0) {
-            // Aggregate XP from attempts within the specific timeframe
-            const leaderboard = await Attempt.aggregate([
+            leaders = await Attempt.aggregate([
                 { $match: dateFilter },
                 {
                     $group: {
@@ -30,33 +30,25 @@ router.get('/leaderboard', async (req, res) => {
                 { $sort: { xp: -1 } },
                 { $limit: 25 },
                 {
-                    $lookup: {
-                        from: 'users',
-                        localField: '_id',
-                        foreignField: '_id',
-                        as: 'userInfo'
-                    }
+                    $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'userInfo' }
                 },
                 { $unwind: '$userInfo' },
                 {
                     $project: {
-                        _id: 1,
-                        xp: 1,
-                        accuracy: 1,
-                        name: '$userInfo.name',
-                        avatar: '$userInfo.avatar'
+                        _id: 1, xp: 1, accuracy: 1,
+                        name: '$userInfo.name', avatar: '$userInfo.avatar'
                     }
                 }
             ]);
-            return res.json(leaderboard);
         } else {
-            // Default: All Time leaderboard from User collection
-            const leaderboard = await User.find({ xp: { $gt: 0 } })
+            leaders = await User.find({ xp: { $gt: 0 } })
                 .sort({ xp: -1 })
                 .limit(25)
                 .select('name xp accuracy avatar');
-            res.json(leaderboard);
         }
+
+        res.json({ leaders });
+
     } catch (err) {
         console.error('Leaderboard Error:', err);
         res.status(500).json({ message: 'Failed to fetch leaderboard data' });

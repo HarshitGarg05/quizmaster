@@ -31,8 +31,16 @@ export const QuizCard = ({ quiz }) => (
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center justify-between gap-4 w-full">
                             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary truncate block">{quiz.category}</span>
-                            <div className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/5 bg-white/5 ${quiz.difficulty === 'Easy' ? 'text-green-500' : quiz.difficulty === 'Hard' ? 'text-rose-500' : 'text-amber-500'}`}>
-                                {quiz.difficulty}
+                            <div className="flex items-center gap-3">
+                                {quiz.hasAttempted && (
+                                    <div className="bg-primary/10 border border-primary/20 px-3 py-1 rounded-full flex items-center gap-1.5 shrink-0">
+                                        <span className="material-symbols-outlined text-[14px] text-primary">verified</span>
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-primary">Attempted</span>
+                                    </div>
+                                )}
+                                <div className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/5 bg-white/5 ${quiz.difficulty === 'Easy' ? 'text-green-500' : quiz.difficulty === 'Hard' ? 'text-rose-500' : 'text-amber-500'}`}>
+                                    {quiz.difficulty}
+                                </div>
                             </div>
                         </div>
                         <span className="w-8 h-[1.5px] bg-white/10 group-hover:w-full transition-all duration-700" />
@@ -52,10 +60,10 @@ export const QuizCard = ({ quiz }) => (
                     </div>
                 </div>
 
-                <Link to={`/quiz/${quiz._id}`} className="relative z-10 mt-10 w-full py-5 editorial-gradient text-white rounded-2xl font-headline font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl shadow-primary/20 hover:scale-[1.03] transition-all group-active:scale-95 overflow-hidden">
+                <Link to={`/quiz/${quiz._id}`} className={`relative z-10 mt-10 w-full py-5 rounded-2xl font-headline font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl transition-all group-active:scale-95 overflow-hidden ${quiz.hasAttempted ? 'bg-[#0a0a0c] border border-white/5 text-on-surface hover:bg-white/5' : 'editorial-gradient text-white shadow-primary/20 hover:scale-[1.03]'}`}>
                     <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                    <span className="relative z-10">Start Quiz</span>
-                    <span className="material-symbols-outlined relative z-10 text-xl font-light">play_arrow</span>
+                    <span className="relative z-10">{quiz.hasAttempted ? 'Retake: 0 XP' : 'Start Quiz'}</span>
+                    <span className="material-symbols-outlined relative z-10 text-xl font-light">{quiz.hasAttempted ? 'restart_alt' : 'play_arrow'}</span>
                 </Link>
             </div>
         </BorderGlow>
