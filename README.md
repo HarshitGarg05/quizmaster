@@ -1,58 +1,52 @@
-# 🎓 QuizMaster: The Cognitive Atelier
+# QuizMaster: Interactive Learning & Merit Platform
 
-[![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://quizmaster-protocol.vercel.app)
-[![React 19](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
-[![Node.js](https://img.shields.io/badge/Node.js-Backend-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![Deployment Status](https://img.shields.io/badge/Vercel-Deployed-green?style=flat-square)](https://quizmaster-protocol.vercel.app)
+[![Tech Stack](https://img.shields.io/badge/MERN-Stack-blue?style=flat-square)](https://mongodb.com)
 
-**QuizMaster** is a high-fidelity MERN platform designed to transform traditional assessment into a premium, merit-driven experience. Built with a focus on **Maiden-Attempt Integrity**, the platform ensures that every achievement—from XP to global rank—is a true reflection of the scholar's learning journey.
-
----
-
-## 🏗️ Core Meritocracy Architecture
-
-### 🛡️ Maiden-Attempt Integrity
-The platform features a proprietary **XP Guard** system that enforces a strict First-Attempt reward protocol. 
-- **Maiden Rewards**: Full XP, accuracy bonuses, and time multipliers are awarded exclusively on the first attempt at any quiz.
-- **Retake Protocol**: Scholars can retake quizzes as many times as they wish for mastery, but global rankings and total XP remain tethered to their original achievement to prevent merit inflation.
-
-### 📊 Persistent Dynamic Leaderboard
-Unlike traditional rankings that rely on volatile logs, QuizMaster's leaderboard is built on a **Dual-Persistence Layer**:
-- **Profile Persistence**: Your rank (Explorer, Expert, Legend) is tied to your permanent identity.
-- **Soft-Delete Recovery**: Clearing your recent activity dashboard "hides" the history from your view but maintains your global merit for Weekly, Monthly, and All-Time rankings.
-
-### 🎨 The "Cognitive Atelier" UI
-A premium design language featuring:
-- **Soft Aurora Animations**: Dynamic background waves that interact with user focus.
-- **Border Glow Components**: High-fidelity glowing borders that highlight achievements.
-- **Glassmorphic Rankings**: Elegant, layered leaderboard rows with dynamic user highlighting.
+**QuizMaster** is a full-stack quiz platform designed to provide a fair and competitive learning environment. It focuses on rewarding a user's first attempt while allowing unlimited practice to master the material.
 
 ---
 
-## 🚀 Technical Stack
+## How It Works
 
-- **Frontend**: React 19, Framer Motion, TailwindCSS, axios.
-- **Backend**: Node.js, Express, MongoDB (Mongoose), JWT Authentication.
-- **Deployment**: Vercel (Front & Back), MongoDB Atlas.
+### First-Attempt Rewards
+To ensure the leaderboard remains fair, XP and accuracy statistics are only calculated during your **first attempt** at any quiz.
+- **Rewards**: You earn full XP, accuracy bonuses, and speed bonuses only on your first try.
+- **Retakes**: You can retake any quiz as many times as you like to practice, but your global rank and total XP will stay tied to your original score. This prevents users from "gaming" the system by memorizing answers.
+
+### Dynamic Leaderboard
+The leaderboard allows you to see how you rank against other users in different timeframes (Weekly, Monthly, and All-Time).
+- **Persistent Stats**: Even if you clear your dashboard history, your global rank and merit points are preserved.
+- **Personalized View**: Your own rank is always highlighted at the bottom of the leaderboard so you can quickly see your standing.
 
 ---
 
-## 🛠️ Installation & Setup
+## Tech Stack
 
-1. **Clone the Identity**:
+- **Frontend**: React 19, Framer Motion (Animations), TailwindCSS.
+- **Backend**: Node.js, Express, MongoDB with Mongoose.
+- **Authentication**: Secure JWT-based login system.
+- **Deployment**: Automated builds on Vercel.
+
+---
+
+## How to Set Up Locally
+
+1. **Clone the Project**:
    ```bash
    git clone https://github.com/HarshitGarg05/quizmaster.git
    cd quizmaster
    ```
 
-2. **Backend Infrastructure**:
+2. **Run the Backend**:
    ```bash
    cd backend
    npm install
-   # Configure your .env with MONGODB_URI and JWT_SECRET
+   # Add your MONGODB_URI and JWT_SECRET to a .env file
    npm run dev
    ```
 
-3. **Frontend Presentation**:
+3. **Run the Frontend**:
    ```bash
    cd ../frontend
    npm install
@@ -61,15 +55,18 @@ A premium design language featuring:
 
 ---
 
-## 🏆 Current Ranks & Thresholds
+## User Ranks
 
-- **Explorer**: 300+ XP (Initial Merit)
+Users progress through several ranks based on their total XP:
+
+- **Rookie**: 0+ XP (Starting Rank)
+- **Explorer**: 300+ XP
 - **Challenger**: 800+ XP
 - **Expert**: 2,000+ XP
 - **Master**: 5,000+ XP
 - **Grandmaster**: 9,000+ XP
-- **Legend**: 15,000+ XP (Apex Standing)
+- **Legend**: 15,000+ XP
 
 ---
 
-Developed with ❤️ by **Antigravity** for Harshit Garg.
+Created for **Harshit Garg**.
