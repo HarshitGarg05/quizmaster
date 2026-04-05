@@ -9,3 +9,6 @@ backend/logs/
 XPGUARD_DEBUG.txt
 *.log
 .DS_Store
+.vercel/
+tmp/
+.stitch/
