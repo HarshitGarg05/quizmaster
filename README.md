@@ -69,4 +69,4 @@ Users progress through several ranks based on their total XP:
 
 ---
 
-Created for **Harshit Garg**.
+Created by **Harshit Garg**.
