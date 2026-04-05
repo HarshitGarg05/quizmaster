@@ -17,35 +17,30 @@ router.get('/leaderboard', async (req, res) => {
         }
 
         let leaders;
-        if (Object.keys(dateFilter).length > 0) {
-            leaders = await Attempt.aggregate([
-                { $match: dateFilter },
-                {
-                    $group: {
-                        _id: "$userId",
-                        xp: { $sum: "$xpEarned" },
-                        accuracy: { $avg: "$accuracy" }
-                    }
-                },
-                { $sort: { xp: -1 } },
-                { $limit: 25 },
-                {
-                    $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'userInfo' }
-                },
-                { $unwind: '$userInfo' },
-                {
-                    $project: {
-                        _id: 1, xp: 1, accuracy: 1,
-                        name: '$userInfo.name', avatar: '$userInfo.avatar'
-                    }
+
+        // Always use aggregation to ensure consistency with the Attempt collection source of truth
+        leaders = await Attempt.aggregate([
+            { $match: dateFilter },
+            {
+                $group: {
+                    _id: "$userId",
+                    xp: { $sum: "$xpEarned" },
+                    accuracy: { $avg: "$accuracy" }
                 }
-            ]);
-        } else {
-            leaders = await User.find({ xp: { $gt: 0 } })
-                .sort({ xp: -1 })
-                .limit(25)
-                .select('name xp accuracy avatar');
-        }
+            },
+            { $sort: { xp: -1 } },
+            { $limit: 25 },
+            {
+                $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'userInfo' }
+            },
+            { $unwind: '$userInfo' },
+            {
+                $project: {
+                    _id: 1, xp: 1, accuracy: 1,
+                    name: '$userInfo.name', avatar: '$userInfo.avatar'
+                }
+            }
+        ]);
 
         res.json({ leaders });
 

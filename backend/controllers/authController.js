@@ -160,10 +160,36 @@ const updateUserRole = async (req, res) => {
 
 const getProfile = async (req, res) => {
     try {
+        const User = require('../models/User');
+        const Attempt = require('../models/Attempt');
+
         const user = await User.findById(req.user.id).select('-password');
         if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // PERSISTENCE SYNC: Recalculate total XP from the Attempt collection
+        // This ensures Dashboard (Profile) and Leaderboard are ALWAYS in sync
+        const attempts = await Attempt.find({ userId: user._id });
+        const totalXP = attempts.reduce((acc, curr) => acc + (curr.xpEarned || 0), 0);
+
+        // Calculate dynamic accuracy across all maiden attempts
+        const maidenAttempts = attempts.filter(a => a.xpEarned > 0 || (user.maidenQuizzes && user.maidenQuizzes.includes(a.quizId)));
+        let avgAccuracy = 0;
+        if (maidenAttempts.length > 0) {
+            avgAccuracy = Math.round(maidenAttempts.reduce((acc, curr) => acc + (curr.accuracy || 0), 0) / maidenAttempts.length);
+        } else if (attempts.length > 0) {
+            avgAccuracy = Math.round(attempts.reduce((acc, curr) => acc + (curr.accuracy || 0), 0) / attempts.length);
+        }
+
+        // If stale, update the user model silently
+        if (user.xp !== totalXP || user.accuracy !== avgAccuracy) {
+            user.xp = totalXP;
+            user.accuracy = avgAccuracy;
+            await user.save();
+        }
+
         res.status(200).json(user);
     } catch (err) {
+        console.error('Fetch Profile Error:', err);
         res.status(500).json({ message: 'Failed to fetch profile', error: err.message });
     }
 };
